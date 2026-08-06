@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: medical-triage-ml
+Version: 0.1.0
+Summary: Text classification system for medical triage
+Requires-Python: >=3.11
+License-File: LICENSE
+Requires-Dist: pandas
+Requires-Dist: scikit-learn
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: joblib
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Requires-Dist: httpx; extra == "dev"
+Dynamic: license-file
