@@ -5,10 +5,11 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-COPY pyproject.toml ./
+COPY pyproject.toml constraints.txt ./
 COPY src/ ./src/
 
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir -c constraints.txt . \
+    && pip check
 
 COPY models/medical_triage_model.joblib ./models/medical_triage_model.joblib
 
