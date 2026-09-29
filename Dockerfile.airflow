@@ -1,0 +1,17 @@
+FROM apache/airflow:3.3.2-python3.12
+
+USER root
+
+RUN mkdir -p /opt/medical-triage /opt/medical-venv \
+    && chown airflow:root /opt/medical-triage /opt/medical-venv
+
+USER airflow
+
+COPY --chown=airflow:root pyproject.toml constraints.txt /opt/medical-triage/
+COPY --chown=airflow:root src/ /opt/medical-triage/src/
+COPY --chown=airflow:root scripts/ /opt/medical-triage/scripts/
+
+RUN python -m venv /opt/medical-venv \
+    && /opt/medical-venv/bin/python -m pip install --no-cache-dir \
+        -c /opt/medical-triage/constraints.txt /opt/medical-triage \
+    && /opt/medical-venv/bin/python -m pip check
