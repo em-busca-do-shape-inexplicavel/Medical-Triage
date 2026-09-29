@@ -1,0 +1,18 @@
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: medical-triage-airflow:local
+    command: standalone
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - airflow_home:/opt/airflow
+      - ./dags:/opt/airflow/dags:ro
+      - ./data/raw:/opt/medical-triage/data/raw:ro
+
+volumes:
+  airflow_home:
