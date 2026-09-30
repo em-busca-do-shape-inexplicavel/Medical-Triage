@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
-from medical_triage.data_preparation import TEXT_COL, TARGET_COL
+from medical_triage.data_preparation import TARGET_COL, TEXT_COL
 
 
 def build_model(random_state: int = 42) -> Pipeline:

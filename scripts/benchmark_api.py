@@ -1,6 +1,6 @@
+import json
 from pathlib import Path
 from time import perf_counter
-import json
 
 import httpx
 import pandas as pd

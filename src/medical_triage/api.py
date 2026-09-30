@@ -2,9 +2,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import joblib
-from fastapi import FastAPI
-
-from fastapi import Request
+from fastapi import FastAPI, Request
 from pydantic import BaseModel, Field, field_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
