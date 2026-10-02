@@ -11,7 +11,8 @@ COPY src/ ./src/
 RUN pip install --no-cache-dir -c constraints.txt . \
     && pip check
 
-COPY models/medical_triage_model.joblib ./models/medical_triage_model.joblib
+ARG MODEL_PATH=models/medical_triage_model.joblib
+COPY ${MODEL_PATH} ./models/medical_triage_model.joblib
 
 EXPOSE 8000
 
