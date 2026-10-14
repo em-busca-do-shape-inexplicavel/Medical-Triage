@@ -1,3 +1,5 @@
+import json
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -14,10 +16,22 @@ MODEL_PATH = PROJECT_ROOT / "models" / "medical_triage_model.joblib"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not MODEL_PATH.is_file():
-        raise FileNotFoundError(f"Model artifact not found: {MODEL_PATH}")
+    backend = os.environ.get("MODEL_BACKEND", "sklearn")
+    if backend == "sklearn":
+        if not MODEL_PATH.is_file():
+            raise FileNotFoundError(f"Model artifact not found: {MODEL_PATH}")
+        artifact = joblib.load(MODEL_PATH)
+    elif backend == "onnx":
+        from medical_triage.onnx_inference import OnnxPredictor
 
-    artifact = joblib.load(MODEL_PATH)
+        onnx_path = PROJECT_ROOT / "models" / "medical_triage_model.onnx"
+        metadata = json.loads(onnx_path.with_suffix(".onnx.json").read_text())
+        artifact = {
+            "pipeline": OnnxPredictor(onnx_path),
+            "label_mapping": {int(k): v for k, v in metadata["label_mapping"].items()},
+        }
+    else:
+        raise ValueError(f"Unknown MODEL_BACKEND: {backend}")
 
     app.state.pipeline = artifact["pipeline"]
     app.state.label_mapping = artifact["label_mapping"]

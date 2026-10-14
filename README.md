@@ -77,6 +77,73 @@ and provisioning YAML are versioned under `monitoring/`.
 
 ## Remaining delivery work
 
-Model optimization and its comparative benchmark, complete cloud architecture
-documentation, and the final STAR video are still pending. The CI workflow
-builds and smoke-tests a synthetic model; it does not deploy the real model.
+Complete cloud architecture/delivery documentation and the final STAR video
+are still pending. The CI workflow builds and smoke-tests a synthetic sklearn
+model; it does not deploy the real model. ONNX conversion and API behavior are
+tested with synthetic data when the optimization extra is installed (as in CI).
+
+## ONNX optimization
+
+The selected pipeline is exported without retraining, including TF-IDF and
+Logistic Regression. The original joblib artifact remains unchanged and is the
+default API backend. ONNX Runtime uses CPU execution with one intra-op and one
+inter-op thread. The converter uses locale `C` to avoid dependence on an
+unavailable system locale in slim containers.
+
+```bash
+python -m pip install -c constraints.txt -e ".[dev,optimization]"
+python scripts/export_onnx.py
+docker compose -f compose.monitoring.yaml up -d --build
+docker compose -f compose.optimization.yaml up -d --build
+python scripts/benchmark_optimization.py --http
+```
+
+The exporter refuses to overwrite an existing ONNX file or sidecar. For a new
+conversion, use `--output` with a new path. The default API/Docker configuration
+expects `models/medical_triage_model.onnx` and its `.onnx.json` sidecar. Generated
+ONNX binaries are ignored by Git; recreate them from the trusted joblib artifact.
+The sidecar records label mappings, versions, and source/output SHA-256 hashes.
+
+The optimized API is available at http://127.0.0.1:8002/docs. It is a separate
+container and does not replace the original API on port 8001. Its metrics endpoint
+is available, but the monitoring dashboard still targets the original API.
+For local Uvicorn, set `MODEL_BACKEND=onnx`; omit it to use sklearn.
+
+The benchmark checks all validation/test predictions for conversion fidelity,
+then times 100 fixed validation texts across five rounds, with 20 warmups per
+backend and alternating backend order. This does not train or tune on the test
+set. The validation data was included in final fitting, so its reported quality
+is not a generalization estimate. Both HTTP backends are checked against their
+local artifacts before timing. Raw timings, versions, hardware context, hashes,
+and per-round summaries are in `reports/optimization_benchmark.json`.
+
+| Measurement | sklearn | ONNX |
+| --- | ---: | ---: |
+| In-process mean latency | 1.236 ms | 0.872 ms |
+| HTTP mean latency | 5.591 ms | 4.927 ms |
+| HTTP p95 latency | 8.854 ms | 7.542 ms |
+| Model file size | 8,243,196 bytes | 6,496,611 bytes |
+| Test accuracy | 0.812851 | 0.812851 |
+| Test macro F1 | 0.808352 | 0.808568 |
+
+These local observations show approximately 29.5% lower in-process mean latency
+and 11.9% lower HTTP mean latency. They are not cloud capacity claims or
+statistical guarantees. HTTP measurements include network/serialization overhead;
+in-process measurements do not. In-process numerical libraries were restricted
+to one thread; the HTTP sklearn service retained its normal container defaults.
+Both HTTP services were single-worker, with one outstanding request at a time.
+
+**Conversion is not exactly equivalent:** 4 of 1,245 test labels and 1 of 1,245
+validation labels differed. Possible causes include tokenization, casing and
+floating-point differences; their individual contributions were not established.
+Non-English Unicode equivalence is not guaranteed. The tiny test macro-F1 change
+is not evidence of a better trained model. The original remains the default;
+ONNX is an explicitly selected optimization candidate for the demonstration.
+
+The old `api_latency_baseline.json` was measured in a different run. Use the new
+paired report to assess speedup, not a comparison between different sessions.
+
+```bash
+python -m pytest tests/ -q
+docker compose -f compose.optimization.yaml down
+```

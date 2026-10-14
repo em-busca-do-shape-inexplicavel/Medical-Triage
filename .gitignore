@@ -4,3 +4,4 @@ __pycache__/
 data/
 # Generated model artifacts
 models/*.joblib
+models/*.onnx
