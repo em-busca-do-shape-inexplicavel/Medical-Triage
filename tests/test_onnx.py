@@ -1,7 +1,11 @@
 """Optional conversion tests using synthetic data, never the real artifact."""
 
 import json
+import subprocess
+import sys
+from pathlib import Path
 
+import joblib
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
@@ -76,3 +80,35 @@ def test_unknown_backend_fails_startup(monkeypatch):
     with pytest.raises(ValueError, match="Unknown MODEL_BACKEND"):
         with TestClient(api.app):
             pass
+
+
+def test_export_with_existing_sidecar(converted_model, tmp_path):
+    model, _ = converted_model
+    source = tmp_path / "source.joblib"
+    joblib.dump({"pipeline": model, "label_mapping": {1: "cardiac", 2: "digestive"}}, source)
+    output = tmp_path / "export.onnx"
+    sidecar = output.with_suffix(".onnx.json")
+    sidecar.write_text('{"old": true}')
+    command = [
+        sys.executable,
+        str(Path(__file__).resolve().parents[1] / "scripts/export_onnx.py"),
+        "--input", str(source), "--output", str(output),
+    ]
+    refused = subprocess.run(command, capture_output=True, text=True, timeout=60)
+    assert refused.returncode != 0
+    assert "Metadata already exists" in refused.stderr
+    assert not output.exists()
+    assert json.loads(sidecar.read_text()) == {"old": True}
+
+    command.append("--replace-metadata")
+    subprocess.run(command, check=True, capture_output=True, timeout=60)
+    assert json.loads(sidecar.read_text())["label_mapping"] == {
+        "1": "cardiac", "2": "digestive",
+    }
+    assert OnnxPredictor(output).predict(["cardiac artery"]).tolist() == [1]
+    binary_before, metadata_before = output.read_bytes(), sidecar.read_bytes()
+    refused = subprocess.run(command, capture_output=True, text=True, timeout=60)
+    assert refused.returncode != 0
+    assert "ONNX output already exists" in refused.stderr
+    assert output.read_bytes() == binary_before
+    assert sidecar.read_bytes() == metadata_before
