@@ -2,8 +2,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import joblib
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field, field_validator
+
+from medical_triage.metrics import MetricsMiddleware
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_PATH = PROJECT_ROOT / "models" / "medical_triage_model.joblib"
@@ -24,6 +27,7 @@ async def lifespan(app: FastAPI):
     del app.state.pipeline
     del app.state.label_mapping
 
+
 class PredictionRequest(BaseModel):
     text: str = Field(min_length=1)
 
@@ -37,6 +41,7 @@ class PredictionRequest(BaseModel):
 
         return normalized
 
+
 class PredictionResponse(BaseModel):
     condition_label: int
     condition_name: str
@@ -48,6 +53,16 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+app.add_middleware(MetricsMiddleware)
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics():
+    return Response(
+        content=generate_latest(),
+        headers={"Content-Type": CONTENT_TYPE_LATEST},
+    )
+
 
 @app.get("/health")
 def health():

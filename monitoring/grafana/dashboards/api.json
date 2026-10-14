@@ -1,0 +1,171 @@
+{
+  "uid": "medical-triage-api",
+  "title": "Medical Triage API",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "tags": [
+    "medical-triage"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Prediction requests since API restart",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "sum(medical_triage_http_requests_total{job=\"medical-triage-api\",route=\"/predict\"}) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "medical-prometheus"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Prediction request rate",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 16,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(medical_triage_http_requests_total{job=\"medical-triage-api\",route=\"/predict\"}[$__rate_interval])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "requests/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "medical-prometheus"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Prediction latency — p50 and p95",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(medical_triage_http_request_duration_seconds_bucket{job=\"medical-triage-api\",route=\"/predict\"}[$__rate_interval])))",
+          "refId": "A",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(medical_triage_http_request_duration_seconds_bucket{job=\"medical-triage-api\",route=\"/predict\"}[$__rate_interval])))",
+          "refId": "B",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "medical-prometheus"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Prediction error rate — 4xx / 5xx",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "100 * (sum(rate(medical_triage_http_requests_total{job=\"medical-triage-api\",route=\"/predict\",status=~\"4..\"}[$__rate_interval])) or vector(0)) / clamp_min(sum(rate(medical_triage_http_requests_total{job=\"medical-triage-api\",route=\"/predict\"}[$__rate_interval])), 1e-9)",
+          "refId": "A",
+          "legendFormat": "Client errors (4xx)"
+        },
+        {
+          "expr": "100 * (sum(rate(medical_triage_http_requests_total{job=\"medical-triage-api\",route=\"/predict\",status=~\"5..\"}[$__rate_interval])) or vector(0)) / clamp_min(sum(rate(medical_triage_http_requests_total{job=\"medical-triage-api\",route=\"/predict\"}[$__rate_interval])), 1e-9)",
+          "refId": "B",
+          "legendFormat": "Server errors (5xx)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "medical-prometheus"
+      }
+    },
+    {
+      "id": 5,
+      "title": "API scrape availability",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"medical-triage-api\"}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "medical-prometheus"
+      }
+    }
+  ]
+}

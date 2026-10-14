@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: Medical Triage
+    orgId: 1
+    folder: Medical Triage
+    type: file
+    disableDeletion: false
+    allowUiUpdates: false
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards
