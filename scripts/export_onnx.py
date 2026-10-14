@@ -23,11 +23,18 @@ def main():
     parser.add_argument(
         "--output", type=Path, default=root / "models/medical_triage_model.onnx"
     )
+    parser.add_argument(
+        "--replace-metadata",
+        action="store_true",
+        help="Replace an existing sidecar only; never overwrite an ONNX binary.",
+    )
     args = parser.parse_args()
     metadata_path = args.output.with_suffix(".onnx.json")
-    if args.output.exists() or metadata_path.exists():
+    if args.output.exists():
+        raise FileExistsError("ONNX output already exists; choose a new output.")
+    if metadata_path.exists() and not args.replace_metadata:
         raise FileExistsError(
-            "ONNX output or metadata already exists; choose a new output."
+            "Metadata already exists; choose a new output or use --replace-metadata."
         )
     artifact = joblib.load(args.input)
     model = artifact["pipeline"]
