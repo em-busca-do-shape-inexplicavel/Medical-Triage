@@ -27,7 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install -c constraints.txt ".[dev]"
+          python -m pip install -c constraints.txt ".[dev,optimization]"
           python -m pip check
 
       - name: Lint

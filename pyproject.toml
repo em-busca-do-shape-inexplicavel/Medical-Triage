@@ -17,6 +17,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+onnx = [
+    "onnxruntime==1.31.0"
+]
+optimization = [
+    "onnxruntime==1.31.0",
+    "onnx==1.23.2",
+    "skl2onnx==1.20.0"
+]
 dev = [
     "pytest",
     "ruff",

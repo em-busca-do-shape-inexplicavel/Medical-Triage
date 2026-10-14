@@ -11,6 +11,7 @@ app = api.app
 
 @pytest.fixture
 def client(monkeypatch, tmp_path):
+    monkeypatch.setenv("MODEL_BACKEND", "sklearn")
     model_path = tmp_path / "model.joblib"
     model_path.touch()
 

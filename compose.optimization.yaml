@@ -1,0 +1,9 @@
+name: medical-triage-optimization
+services:
+  api-onnx:
+    build:
+      context: .
+      dockerfile: Dockerfile.onnx
+    image: medical-triage-api:onnx
+    ports:
+      - "127.0.0.1:8002:8000"

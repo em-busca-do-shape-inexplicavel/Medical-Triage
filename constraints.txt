@@ -9,3 +9,6 @@ starlette==1.4.1
 pydantic==2.13.4
 uvicorn==0.52.1
 prometheus-client==0.26.0
+onnxruntime==1.31.0
+onnx==1.23.2
+skl2onnx==1.20.0
