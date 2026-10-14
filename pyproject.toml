@@ -12,7 +12,8 @@ dependencies = [
     "scikit-learn",
     "fastapi",
     "uvicorn",
-    "joblib"
+    "joblib",
+    "prometheus-client==0.26.0"
 ]
 
 [project.optional-dependencies]
